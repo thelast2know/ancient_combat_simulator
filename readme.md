@@ -1,0 +1,1 @@
+Ancient combat simulation using reinforment learning based agents and self-play to explore ancient unit tactics and success parameters

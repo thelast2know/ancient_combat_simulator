@@ -1,0 +1,37 @@
+"""
+Collision test scenario: Two agents moving toward each other
+"""
+
+blue_agents:
+  - position: [40, 50]
+    team: 0
+    attributes:
+      cruise_speed: 5.0
+      max_speed: 10.0
+      acceleration: 3.0
+      agility: 4.0
+
+red_agents:
+  - position: [60, 50]
+    team: 1
+    attributes:
+      cruise_speed: 5.0
+      max_speed: 10.0
+      acceleration: 3.0
+      agility: 4.0
+
+infantry:
+  blue:
+    x_min: 20
+    y_min: 25
+    x_max: 60
+    y_max: 50
+  red:
+    x_min: 80
+    y_min: 25
+    x_max: 40
+    y_max: 50
+
+duration_steps: 200
+test_name: collision_test
+description: "Two agents moving toward each other to test collision handling"
