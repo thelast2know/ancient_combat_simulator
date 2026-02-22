@@ -5,12 +5,10 @@ Simple 2D rendering for Phase 1 evaluation and debugging.
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
-from matplotlib.animation import FuncAnimation
-import io
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import List, Tuple
 
-from sim.core import World, GlobalParams
+from sim.core import World
 
 
 class Renderer2D:
@@ -71,7 +69,7 @@ class Renderer2D:
             cx, cy = block.center()
             team_label = 'BLUE' if block.team == 0 else 'RED'
             self.ax.text(cx, cy, team_label, ha='center', va='center',
-                        fontsize=12, weight='bold')
+                         fontsize=12, weight='bold')
         
         # Draw agents
         for agent in self.world.agents:
@@ -97,7 +95,7 @@ class Renderer2D:
             
             # Agent ID label
             self.ax.text(agent.x, agent.y + 1.5, str(agent.agent_id),
-                        ha='center', va='bottom', fontsize=8)
+                         ha='center', va='bottom', fontsize=8)
         
         # Title
         title_str = f"Step {self.world.step_count}: {title}"
@@ -115,8 +113,9 @@ class Renderer2D:
         frame = self.render(title=title, debug=debug)
         self.frames.append(frame)
     
-    def render_trajectory(self, agent_id: int, trajectory: List[Tuple[float, float]],
-                         title: str = ""):
+    def render_trajectory(self, agent_id: int,
+                          trajectory: List[Tuple[float, float]],
+                          title: str = ""):
         """
         Render a specific agent's trajectory.
         

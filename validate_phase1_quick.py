@@ -5,8 +5,8 @@ Tests core functionality needed before proceeding to Phase 2.
 
 import sys
 from pathlib import Path
+
 import numpy as np
-import yaml
 
 # Add paths
 project_root = Path(__file__).parent
@@ -151,7 +151,7 @@ def test_collision_safety() -> bool:
             print("✓ PASSED: No overlaps detected")
             print(f"  Min distance observed: {min_dist_observed:.4f} m")
             print(f"  Min allowed distance: {2 * params.agent_radius:.4f} m")
-            print(f"  100 collision steps executed safely")
+            print("  100 collision steps executed safely")
             return True
         else:
             print(f"✗ FAILED: {violations} overlap violations detected")

@@ -7,7 +7,7 @@ All parameters are exposed in a single config dict for:
 - cultural experimentation
 """
 
-from dataclasses import dataclass, field, asdict
+from dataclasses import dataclass, asdict
 from typing import Dict, Any
 import json
 import yaml

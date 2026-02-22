@@ -2,16 +2,17 @@
 Phase 1 Tests: Determinism, Collision, and Bounds Validation
 """
 
+import sys
+from pathlib import Path
+
 import pytest
 import numpy as np
-from pathlib import Path
-import sys
 
 # Add sim to path
-sim_path = Path(__file__).parent.parent / 'sim'
-sys.path.insert(0, str(sim_path.parent))
+sim_path = Path(__file__).parent.parent
+sys.path.insert(0, str(sim_path))
 
-from sim.core import World, GlobalParams, Agent
+from sim.core import World, GlobalParams
 
 
 class TestDeterminism:

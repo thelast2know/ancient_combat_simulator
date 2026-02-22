@@ -10,7 +10,7 @@ from dataclasses import dataclass
 import hashlib
 import json
 
-from .params import GlobalParams, AgentAttributeDistribution
+from .params import GlobalParams
 
 
 @dataclass
