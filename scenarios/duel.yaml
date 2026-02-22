@@ -1,8 +1,3 @@
-"""
-Simple duel scenario: 1v1
-"""
-
-# Blue agent
 blue_agents:
   - position: [30, 50]
     team: 0
@@ -12,7 +7,6 @@ blue_agents:
       acceleration: 2.0
       agility: 3.0
 
-# Red agent
 red_agents:
   - position: [70, 50]
     team: 1
@@ -22,19 +16,23 @@ red_agents:
       acceleration: 2.0
       agility: 3.0
 
-# Infantry blocks
-infantry:
-  blue:
-    x_min: 20
-    y_min: 25
-    x_max: 60
-    y_max: 50
-  red:
-    x_min: 80
-    y_min: 25
-    x_max: 40
-    y_max: 50
+blue_blocks:
+  - x_min: 10
+    y_min: 40
+    x_max: 18
+    y_max: 60
+    team: 0
 
-# Scenario parameters
-duration_steps: 1000
-test_name: duel_1v1
+red_blocks:
+  - x_min: 82
+    y_min: 40
+    x_max: 90
+    y_max: 60
+    team: 1
+
+simulation:
+  duration_seconds: 10
+  time_step: 0.1
+  seed: 42
+  arena_width: 100
+  arena_height: 100

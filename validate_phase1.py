@@ -7,6 +7,12 @@ import sys
 from pathlib import Path
 import numpy as np
 import yaml
+import io
+
+# Force UTF-8 output on Windows
+if sys.platform == 'win32':
+    sys.stdout.reconfigure(encoding='utf-8')
+
 from sim.core import World, GlobalParams
 from sim.render import Renderer2D
 

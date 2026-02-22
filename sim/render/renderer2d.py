@@ -101,10 +101,13 @@ class Renderer2D:
         title_str = f"Step {self.world.step_count}: {title}"
         self.ax.set_title(title_str, fontsize=14, weight='bold')
         
-        # Convert to RGB array
+        # Convert to RGB array using buffer_rgba for cross-platform compatibility
         self.fig.canvas.draw()
-        image = np.frombuffer(self.fig.canvas.tostring_rgb(), dtype='uint8')
-        image = image.reshape(self.fig.canvas.get_width_height()[::-1] + (3,))
+        w, h = self.fig.canvas.get_width_height()
+        buf = np.frombuffer(self.fig.canvas.buffer_rgba(), dtype=np.uint8)
+        buf = buf.reshape((h, w, 4))
+        # Convert RGBA to RGB
+        image = buf[:, :, :3]
         
         return image
     
