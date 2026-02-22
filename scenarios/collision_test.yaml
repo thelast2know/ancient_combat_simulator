@@ -4,14 +4,14 @@ blue_agents:
     attributes:
       cruise_speed: 3.0
       max_speed: 6.0
-      acceleration: 1.5
+      acceleration: 8.0
       agility: 2.0
   - position: [30, 50]
     team: 0
     attributes:
       cruise_speed: 3.0
       max_speed: 6.0
-      acceleration: 1.5
+      acceleration: 8.0
       agility: 2.0
 
 red_agents:
@@ -20,14 +20,14 @@ red_agents:
     attributes:
       cruise_speed: 3.0
       max_speed: 6.0
-      acceleration: 1.5
+      acceleration: 8.0
       agility: 2.0
   - position: [80, 50]
     team: 1
     attributes:
       cruise_speed: 3.0
       max_speed: 6.0
-      acceleration: 1.5
+      acceleration: 8.0
       agility: 2.0
 
 blue_blocks: []

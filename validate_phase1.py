@@ -100,16 +100,15 @@ def run_scenario_with_video(scenario_path: str, output_video: str,
 
             world.step(actions)
 
-            # Save frame every 5 steps
-            if step % 5 == 0:
-                alive_count = len([a for a in world.agents if a.alive])
-                collision_count = sum(1 for e in world.events
-                                      if e.event_type == 'collision')
-                renderer.save_frame(
-                    title=(f"Agents: {alive_count}, "
-                           f"Collisions: {collision_count}"),
-                    debug=True
-                )
+            # Save frame every step for better visualization
+            alive_count = len([a for a in world.agents if a.alive])
+            collision_count = sum(1 for e in world.events
+                                  if e.event_type == 'collision')
+            renderer.save_frame(
+                title=(f"Agents: {alive_count}, "
+                       f"Collisions: {collision_count}"),
+                debug=True
+            )
 
             if (step + 1) % 100 == 0:
                 print(f"  Step {step + 1}/{duration}")

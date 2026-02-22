@@ -4,7 +4,7 @@ blue_agents:
     attributes:
       cruise_speed: 5.0
       max_speed: 8.0
-      acceleration: 2.0
+      acceleration: 10.0
       agility: 3.0
 
 red_agents:
@@ -13,7 +13,7 @@ red_agents:
     attributes:
       cruise_speed: 5.0
       max_speed: 8.0
-      acceleration: 2.0
+      acceleration: 10.0
       agility: 3.0
 
 blue_blocks:
