@@ -1,0 +1,29 @@
+# 50v50 Large-Scale Combat Scenario
+description: "Large-scale combat between two teams of 50 agents each"
+
+blue_agents:
+  count: 50
+  formation: "grid"
+  grid_params:
+    rows: 5
+    cols: 10
+    spacing_x: 4
+    spacing_y: 8
+    origin: [10, 20]
+  attributes:
+    health: 100
+    range: 50
+
+red_agents:
+  count: 50
+  formation: "grid"
+  grid_params:
+    rows: 5
+    cols: 10
+    spacing_x: 4
+    spacing_y: 8
+    origin: [90, 20]
+    reverse_x: true  # Mirror from the right
+  attributes:
+    health: 100
+    range: 50

@@ -34,13 +34,15 @@ class Renderer2D:
             self.ax.set_ylabel('Y (m)')
             self.ax.grid(True, alpha=0.3)
     
-    def render(self, title: str = "", debug: bool = False) -> np.ndarray:
+    def render(self, title: str = "", debug: bool = False, frame_data: dict = None) -> np.ndarray:
         """
-        Render current world state and return as RGB array.
+        Render world state and return as RGB array.
         
         Args:
             title: optional title for the plot
             debug: if True, show velocity vectors and neighbor links
+            frame_data: optional dict with 'agents' and 'projectiles' lists to render from.
+                        If None, renders current world state. If provided, renders from snapshot.
         
         Returns:
             RGB array (H, W, 3) with values 0-255
@@ -71,83 +73,162 @@ class Renderer2D:
             self.ax.text(cx, cy, team_label, ha='center', va='center',
                          fontsize=12, weight='bold')
         
+        # Determine data source: frame_data snapshot or live world
+        if frame_data is not None:
+            agents_to_render = frame_data['agents']
+            projectiles_to_render = frame_data['projectiles']
+        else:
+            agents_to_render = self.world.agents
+            projectiles_to_render = self.world.projectiles
+        
         # Draw agents
-        for agent in self.world.agents:
-            color = 'blue' if agent.team == 0 else 'red'
-            
-            if agent.alive:
-                # Draw living agent as triangle pointing in heading direction
-                radius = self.world.params.agent_radius
-                # Triangle points: tip at heading direction, base behind
-                angle = agent.heading
-                # Create triangle vertices (tip, left corner, right corner)
-                vertices = np.array([
-                    [agent.x + radius * np.cos(angle),
-                     agent.y + radius * np.sin(angle)],
-                    [agent.x + radius * np.cos(angle + 2.5),
-                     agent.y + radius * np.sin(angle + 2.5)],
-                    [agent.x + radius * np.cos(angle - 2.5),
-                     agent.y + radius * np.sin(angle - 2.5)]
-                ])
-                triangle = patches.Polygon(
-                    vertices, color=color, alpha=0.7, zorder=10,
-                    edgecolor='black', linewidth=1
-                )
-                self.ax.add_patch(triangle)
+        if frame_data is not None:
+            # Render from snapshot data
+            for agent_data in agents_to_render:
+                color = 'blue' if agent_data['team'] == 0 else 'red'
+                x, y = agent_data['x'], agent_data['y']
+                heading = agent_data['heading']
+                alive = agent_data['alive']
                 
-                # Draw velocity vector
-                if debug:
-                    scale = 2.0
-                    self.ax.arrow(
-                        agent.x, agent.y,
-                        agent.vx * scale, agent.vy * scale,
-                        head_width=0.3, head_length=0.2,
-                        fc='black', ec='black', alpha=0.5, zorder=9
+                if alive:
+                    # Draw living agent as triangle pointing in heading direction
+                    radius = self.world.params.agent_radius
+                    angle = heading
+                    vertices = np.array([
+                        [x + radius * np.cos(angle),
+                         y + radius * np.sin(angle)],
+                        [x + radius * np.cos(angle + 2.5),
+                         y + radius * np.sin(angle + 2.5)],
+                        [x + radius * np.cos(angle - 2.5),
+                         y + radius * np.sin(angle - 2.5)]
+                    ])
+                    triangle = patches.Polygon(
+                        vertices, color=color, alpha=0.7, zorder=10,
+                        edgecolor='black', linewidth=1
                     )
-            else:
-                # Draw dead agent as grey circle with team-colored border
-                radius = self.world.params.agent_radius
-                circle = patches.Circle(
-                    (agent.x, agent.y), radius,
-                    color='grey', alpha=0.5, zorder=5,
-                    edgecolor=color, linewidth=2
-                )
-                self.ax.add_patch(circle)
+                    self.ax.add_patch(triangle)
+                else:
+                    # Draw dead agent as grey circle
+                    radius = self.world.params.agent_radius
+                    circle = patches.Circle(
+                        (x, y), radius,
+                        color='grey', alpha=0.5, zorder=5,
+                        edgecolor=color, linewidth=2
+                    )
+                    self.ax.add_patch(circle)
+        else:
+            # Render from live world state
+            for agent in self.world.agents:
+                color = 'blue' if agent.team == 0 else 'red'
+                
+                if agent.alive:
+                    # Draw living agent as triangle pointing in heading direction
+                    radius = self.world.params.agent_radius
+                    # Triangle points: tip at heading direction, base behind
+                    angle = agent.heading
+                    # Create triangle vertices (tip, left corner, right corner)
+                    vertices = np.array([
+                        [agent.x + radius * np.cos(angle),
+                         agent.y + radius * np.sin(angle)],
+                        [agent.x + radius * np.cos(angle + 2.5),
+                         agent.y + radius * np.sin(angle + 2.5)],
+                        [agent.x + radius * np.cos(angle - 2.5),
+                         agent.y + radius * np.sin(angle - 2.5)]
+                    ])
+                    triangle = patches.Polygon(
+                        vertices, color=color, alpha=0.7, zorder=10,
+                        edgecolor='black', linewidth=1
+                    )
+                    self.ax.add_patch(triangle)
+                    
+                    # Draw velocity vector
+                    if debug:
+                        scale = 2.0
+                        self.ax.arrow(
+                            agent.x, agent.y,
+                            agent.vx * scale, agent.vy * scale,
+                            head_width=0.3, head_length=0.2,
+                            fc='black', ec='black', alpha=0.5, zorder=9
+                        )
+                else:
+                    # Draw dead agent as grey circle with team-colored border
+                    radius = self.world.params.agent_radius
+                    circle = patches.Circle(
+                        (agent.x, agent.y), radius,
+                        color='grey', alpha=0.5, zorder=5,
+                        edgecolor=color, linewidth=2
+                    )
+                    self.ax.add_patch(circle)
         
         # Draw projectiles and their trajectories
-        for proj in self.world.projectiles:
-            # Get projectile state
-            x, y, z = proj.position()
-            vx, vy, vz = proj.velocity()
-            v_mag = np.sqrt(vx*vx + vy*vy)
-            
-            # Draw projectile based on state
-            if proj.state.value == 'in_flight' and v_mag > 0.01:
-                # In-flight: draw projectile as thin arrow pointing in direction
-                arrow_length = 1.5  # world units
-                arrow_scale = arrow_length / (v_mag + 0.001)
+        if frame_data is not None:
+            # Render from snapshot data - use arrows like live rendering
+            for proj_data in projectiles_to_render:
+                x, y, z = proj_data['x'], proj_data['y'], proj_data['z']
+                vx, vy = proj_data['vx'], proj_data['vy']
+                v_mag = np.sqrt(vx*vx + vy*vy)
+                state = proj_data.get('state', 'in_flight')
                 
-                self.ax.arrow(
-                    x, y,
-                    vx * arrow_scale, vy * arrow_scale,
-                    head_width=0.3, head_length=0.25,
-                    fc='black', ec='black', alpha=0.9, zorder=8,
-                    linewidth=0.8  # Thin line
-                )
-            elif proj.state.value != 'in_flight':
-                # Impacted: draw shorter arrow (half length) embedded in ground
-                # Use impact velocity direction to show orientation
-                if v_mag > 0.01:
-                    # Has velocity at impact: draw half-length arrow
-                    arrow_length = 0.75  # Half length when embedded
+                # Draw projectile based on state
+                if state == 'in_flight' and v_mag > 0.01:
+                    # In-flight: draw projectile as thin arrow pointing in direction
+                    arrow_length = 1.5  # world units
                     arrow_scale = arrow_length / (v_mag + 0.001)
+                    
                     self.ax.arrow(
                         x, y,
                         vx * arrow_scale, vy * arrow_scale,
-                        head_width=0.3, head_length=0.2,
-                        fc='black', ec='black', alpha=0.8, zorder=8,
+                        head_width=0.3, head_length=0.25,
+                        fc='black', ec='black', alpha=0.9, zorder=8,
+                        linewidth=0.8
+                    )
+                elif state != 'in_flight':
+                    # Impacted: draw shorter arrow (half length) embedded in ground
+                    if v_mag > 0.01:
+                        arrow_length = 0.75
+                        arrow_scale = arrow_length / (v_mag + 0.001)
+                        self.ax.arrow(
+                            x, y,
+                            vx * arrow_scale, vy * arrow_scale,
+                            head_width=0.3, head_length=0.2,
+                            fc='black', ec='black', alpha=0.8, zorder=8,
+                            linewidth=0.8
+                        )
+        else:
+            # Render from live world state (original logic)
+            for proj in self.world.projectiles:
+                # Get projectile state
+                x, y, z = proj.position()
+                vx, vy, vz = proj.velocity()
+                v_mag = np.sqrt(vx*vx + vy*vy)
+                
+                # Draw projectile based on state
+                if proj.state.value == 'in_flight' and v_mag > 0.01:
+                    # In-flight: draw projectile as thin arrow pointing in direction
+                    arrow_length = 1.5  # world units
+                    arrow_scale = arrow_length / (v_mag + 0.001)
+                    
+                    self.ax.arrow(
+                        x, y,
+                        vx * arrow_scale, vy * arrow_scale,
+                        head_width=0.3, head_length=0.25,
+                        fc='black', ec='black', alpha=0.9, zorder=8,
                         linewidth=0.8  # Thin line
                     )
+                elif proj.state.value != 'in_flight':
+                    # Impacted: draw shorter arrow (half length) embedded in ground
+                    # Use impact velocity direction to show orientation
+                    if v_mag > 0.01:
+                        # Has velocity at impact: draw half-length arrow
+                        arrow_length = 0.75  # Half length when embedded
+                        arrow_scale = arrow_length / (v_mag + 0.001)
+                        self.ax.arrow(
+                            x, y,
+                            vx * arrow_scale, vy * arrow_scale,
+                            head_width=0.3, head_length=0.2,
+                            fc='black', ec='black', alpha=0.8, zorder=8,
+                            linewidth=0.8  # Thin line
+                        )
                 else:
                     # No velocity at impact: draw as small dot
                     self.ax.plot(x, y, 'ko', markersize=3, zorder=8)

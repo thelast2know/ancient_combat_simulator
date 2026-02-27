@@ -1,0 +1,36 @@
+# Quick 3v3 test scenario - full rendering with arrows
+scenario: "scenarios/3v3_test.yaml"
+
+simulation:
+  num_steps: 100
+  random_seed: 42
+  record_interval: 1  # Record every step
+
+behaviors:
+  team_movement:
+    enabled: true
+    target_strategy: "centroid"
+    speed: 8.0
+  
+  projectile_fire:
+    enabled: true
+    fire_probability: 0.03  # ~3 missiles per soldier over 100 steps
+    azimuth_range: [0, 6.28]
+    loft_angle_range: [0.52, 1.05]
+    speed_range: [20, 35]
+
+rendering:
+  enabled: true
+  fps: 30
+  figsize: [12, 10]
+  render_interval: 1  # Render every captured frame
+  output_dir: "output_videos"
+  
+video:
+  enabled: true
+  codec: "mp4v"
+  quality: 18
+  
+output:
+  verbose: true
+  stats_interval: 20

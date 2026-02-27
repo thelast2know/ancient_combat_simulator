@@ -1,0 +1,29 @@
+# Simple 3v3 test scenario
+description: "Simple 3v3 combat for quick testing"
+
+blue_agents:
+  count: 3
+  formation: "grid"
+  grid_params:
+    rows: 1
+    cols: 3
+    spacing_x: 10
+    spacing_y: 0
+    origin: [20, 50]
+  attributes:
+    health: 100
+    range: 50
+
+red_agents:
+  count: 3
+  formation: "grid"
+  grid_params:
+    rows: 1
+    cols: 3
+    spacing_x: 10
+    spacing_y: 0
+    origin: [80, 50]
+    reverse_x: true
+  attributes:
+    health: 100
+    range: 50

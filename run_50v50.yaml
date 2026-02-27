@@ -1,0 +1,38 @@
+# Master run configuration - hierarchical YAML
+# This file specifies which scenario to run and general execution parameters
+
+scenario: "scenarios/50v50.yaml"
+
+simulation:
+  num_steps: 300
+  random_seed: 42
+  record_interval: 1  # Record every N steps (1 = every step)
+
+behaviors:
+  team_movement:
+    enabled: true
+    target_strategy: "centroid"
+    speed: 8.0
+  
+  projectile_fire:
+    enabled: true
+    fire_probability: 0.25
+    azimuth_range: [0, 6.28]
+    loft_angle_range: [0.52, 1.05]
+    speed_range: [20, 35]
+
+rendering:
+  enabled: true
+  fps: 30
+  figsize: [12, 10]
+  render_interval: 1  # Render every Nth captured frame (1 = render all)
+  output_dir: "output_videos"
+  
+video:
+  enabled: true
+  codec: "mp4v"
+  quality: 18
+  
+output:
+  verbose: true
+  stats_interval: 50

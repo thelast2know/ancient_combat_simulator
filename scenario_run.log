@@ -1,0 +1,48 @@
+C:\Users\AMD Ryzen\OneDrive\Documents\GitHub\combat_modelling\ancient_combat_simulator\sim\render\renderer2d.py:92: UserWarning: Setting the 'color' property will override the edgecolor or facecolor properties.
+  triangle = patches.Polygon(
+
+================================================================================
+ANCIENT COMBAT SIMULATOR - SCENARIO RUNNER
+================================================================================
+
+Scenario: scenarios/50v50.yaml
+Description: Large-scale combat between two teams of 50 agents each
+
+[SpatialGrid] Initialized 100×100 grid (10000 cells)
+[SpatialGrid] Cell size: 1.0m
+================================================================================
+RUNNING SIMULATION
+================================================================================
+  Steps: 300
+  Blue agents: 50
+  Red agents: 50
+
+  Step 50/300: Blue 50, Red 50
+  Step 100/300: Blue 50, Red 50
+  Step 150/300: Blue 50, Red 50
+  Step 200/300: Blue 50, Red 50
+  Step 250/300: Blue 50, Red 50
+  Step 300/300: Blue 50, Red 50
+
+Simulation complete!
+  Total projectiles fired: 7563
+  Final Blue: 50
+  Final Red: 50
+
+================================================================================
+RENDERING VIDEO
+================================================================================
+  Rendering frame 50/301...
+  Rendering frame 100/301...
+  Rendering frame 150/301...
+  Rendering frame 200/301...
+  Rendering frame 250/301...
+  Rendering frame 300/301...
+
+Video saved: output_videos\scenario_20260227_134307.mp4
+  Resolution: 1200x1000
+  Frames: 301
+  FPS: 30
+  Duration: 10.0s
+  Size: 5.9 MB
+
