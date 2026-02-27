@@ -11,6 +11,8 @@ import hashlib
 import json
 
 from .params import GlobalParams
+from .projectile import Projectile
+from .spatial_grid import SpatialGrid
 
 
 @dataclass
@@ -155,6 +157,40 @@ class Agent:
         """Check if this agent overlaps with another."""
         return self.distance_to(other) < 2 * self.params.agent_radius
     
+    def launch_projectile(self, azimuth: float, loft_angle: float, speed: float):
+        """
+        Launch a projectile from this agent's position.
+        
+        Args:
+            azimuth: Direction in XY plane (radians)
+            loft_angle: Elevation angle (radians)
+            speed: Initial speed (m/s)
+        
+        Returns:
+            Projectile instance (caller must add to World)
+        """
+        from .projectile import Projectile
+        import numpy as np
+        
+        # Compute velocity components from polar coords
+        vx = speed * np.cos(loft_angle) * np.cos(azimuth)
+        vy = speed * np.cos(loft_angle) * np.sin(azimuth)
+        vz = speed * np.sin(loft_angle)
+        
+        proj = Projectile(
+            projectile_id=-1,  # Will be assigned by World
+            launcher_id=self.agent_id,
+            launcher_team=self.team,
+            x0=self.x,
+            y0=self.y,
+            z0=1.0,  # Throw from ~shoulder height
+            vx=vx,
+            vy=vy,
+            vz=vz,
+            gravity=self.params.gravity
+        )
+        return proj
+    
     def state_tuple(self) -> tuple:
         """Return state as tuple for hashing."""
         return (
@@ -216,6 +252,12 @@ class World:
         self.agents: List[Agent] = []
         self.agent_dict = {}  # agent_id -> Agent
         
+        # Projectiles
+        self.projectiles: List[Projectile] = []
+        self.projectile_dict = {}  # projectile_id -> Projectile
+        self.in_flight_projectiles: List[Projectile] = []  # Only active (in-flight) projectiles for faster stepping
+        self.next_projectile_id = 0
+        
         # Infantry blocks
         self.infantry_blocks: List[InfantryBlock] = []
         
@@ -223,6 +265,10 @@ class World:
         self.step_count = 0
         self.events: List[Event] = []
         self.max_agent_id = -1
+        
+        # Spatial grid for collision detection optimization
+        # Use fixed 10m cells for good balance between grid overhead and pair reduction
+        self.spatial_grid = SpatialGrid(params.arena_width, params.arena_height, cell_size=1.0)
     
     def add_infantry_block(self, team: int, x_min: float, y_min: float, x_max: float, y_max: float):
         """Add an infantry block to the world."""
@@ -251,8 +297,50 @@ class World:
             agent.desired_vx = vx
             agent.desired_vy = vy
     
+    def launch_projectile(self, agent_id: int, azimuth: float, loft_angle: float, speed: float) -> int:
+        """
+        Launch a projectile from an agent.
+        
+        Args:
+            agent_id: Agent launching the projectile
+            azimuth: Direction in XY plane (radians)
+            loft_angle: Elevation angle (radians)
+            speed: Initial speed (m/s)
+        
+        Returns:
+            projectile_id
+        """
+        if agent_id not in self.agent_dict:
+            return -1
+        
+        agent = self.agent_dict[agent_id]
+        proj = agent.launch_projectile(azimuth, loft_angle, speed)
+        proj.projectile_id = self.next_projectile_id
+        self.next_projectile_id += 1
+        
+        self.projectiles.append(proj)
+        self.projectile_dict[proj.projectile_id] = proj
+        self.in_flight_projectiles.append(proj)  # Track as in-flight for faster stepping
+        
+        return proj.projectile_id
+    
     def _resolve_collisions(self):
-        """Resolve circle-circle collisions between agents."""
+        """Resolve circle-circle collisions between agents.
+        
+        Uses O(n²) approach for small scenarios, spatial grid for large ones.
+        """
+        # For scenarios with <= 150 agents, O(n²) is actually faster
+        # than the overhead of grid building + querying
+        if len(self.agents) <= 150:
+            self._resolve_collisions_naive()
+        else:
+            self._resolve_collisions_spatial()
+    
+    def _resolve_collisions_naive(self):
+        """O(n²) collision detection - faster for small scenarios."""
+        min_dist = 2 * self.params.agent_radius
+        min_dist_sq = min_dist * min_dist  # Squared distance for optimization
+        
         for i, a in enumerate(self.agents):
             if not a.alive:
                 continue
@@ -261,29 +349,35 @@ class World:
                 if not b.alive:
                     continue
                 
-                # Check overlap
-                dist = a.distance_to(b)
-                min_dist = 2 * self.params.agent_radius
+                # Check overlap using squared distance (avoids sqrt)
+                dx = b.x - a.x
+                dy = b.y - a.y
+                dist_sq = dx * dx + dy * dy
                 
-                if dist < min_dist and dist > 0:
-                    # Symmetric elastic collision
-                    dx = (b.x - a.x) / dist
-                    dy = (b.y - a.y) / dist
+                if dist_sq < min_dist_sq:
+                    # Now compute actual distance only if collision detected
+                    dist = np.sqrt(dist_sq) if dist_sq > 0 else 0.0
+                    
+                    # Handle zero distance case
+                    if dist == 0:
+                        dx_norm, dy_norm = 1.0, 0.0
+                    else:
+                        dx_norm = dx / dist
+                        dy_norm = dy / dist
                     
                     # Relative velocity
                     dvx = b.vx - a.vx
                     dvy = b.vy - a.vy
                     
                     # Relative velocity in collision normal
-                    dvn = dvx * dx + dvy * dy
+                    dvn = dvx * dx_norm + dvy * dy_norm
                     
-                    # Do not resolve if velocities are separating
+                    # Do not resolve momentum if velocities are separating
                     if dvn < 0:
-                        # Exchange momentum along normal
-                        a.vx += dvn * dx
-                        a.vy += dvn * dy
-                        b.vx -= dvn * dx
-                        b.vy -= dvn * dy
+                        a.vx += dvn * dx_norm
+                        a.vy += dvn * dy_norm
+                        b.vx -= dvn * dx_norm
+                        b.vy -= dvn * dy_norm
                     
                     # Separate to avoid overlap
                     overlap = min_dist - dist
@@ -300,6 +394,93 @@ class World:
                         target_id=b.agent_id,
                         pos=(a.x, a.y)
                     ))
+    
+    def _resolve_collisions_spatial(self):
+        """Spatial grid-based collision detection - faster for large scenarios."""
+        # Get all potentially colliding pairs from spatial grid
+        neighbor_pairs = self.spatial_grid.get_all_neighbor_pairs()
+        
+        min_dist = 2 * self.params.agent_radius
+        min_dist_sq = min_dist * min_dist  # Squared distance for optimization
+        
+        # Check collisions only for nearby pairs
+        for agent_id_a, agent_id_b in neighbor_pairs:
+            a = self.agent_dict[agent_id_a]
+            b = self.agent_dict[agent_id_b]
+            
+            if not a.alive or not b.alive:
+                continue
+            
+            # Check overlap using squared distance (avoids sqrt)
+            dx = b.x - a.x
+            dy = b.y - a.y
+            dist_sq = dx * dx + dy * dy
+            
+            if dist_sq < min_dist_sq:
+                # Record this actual collision
+                self.spatial_grid.record_collision()
+                
+                # Now compute actual distance only if collision detected
+                dist = np.sqrt(dist_sq) if dist_sq > 0 else 0.0
+                
+                # Handle zero distance case
+                if dist == 0:
+                    dx_norm, dy_norm = 1.0, 0.0
+                else:
+                    dx_norm = dx / dist
+                    dy_norm = dy / dist
+                
+                # Relative velocity
+                dvx = b.vx - a.vx
+                dvy = b.vy - a.vy
+                
+                # Relative velocity in collision normal
+                dvn = dvx * dx_norm + dvy * dy_norm
+                
+                # Do not resolve momentum if velocities are separating
+                if dvn < 0:
+                    a.vx += dvn * dx_norm
+                    a.vy += dvn * dy_norm
+                    b.vx -= dvn * dx_norm
+                    b.vy -= dvn * dy_norm
+                
+                # Separate to avoid overlap
+                overlap = min_dist - dist
+                sep = overlap / 2 + 0.001
+                a.x -= sep * dx
+                a.y -= sep * dy
+                b.x += sep * dx
+                b.y += sep * dy
+                
+                # Log event
+                self.events.append(Event(
+                    event_type='collision',
+                    agent_id=a.agent_id,
+                    target_id=b.agent_id,
+                    pos=(a.x, a.y)
+                ))
+    
+    def _step_projectiles(self):
+        """Integrate projectiles and process impacts."""
+        # Only step in-flight projectiles (much faster than checking all)
+        impacted = []
+        
+        for proj in self.in_flight_projectiles:
+            # Step projectile
+            still_flying = proj.step(self.params.dt)
+            
+            if not still_flying:
+                # Projectile impacted - log event and mark for removal from in-flight list
+                self.events.append(Event(
+                    event_type='projectile_impact',
+                    agent_id=proj.launcher_id,
+                    pos=proj.impact_pos
+                ))
+                impacted.append(proj)
+        
+        # Remove impacted projectiles from in-flight list (keep in projectiles for rendering)
+        for proj in impacted:
+            self.in_flight_projectiles.remove(proj)
     
     def step(self, actions: Optional[dict] = None) -> List[Event]:
         """
@@ -324,6 +505,12 @@ class World:
             agent.update_heading(agent.desired_vx, agent.desired_vy, self.params.dt)
             agent.update_velocity(agent.desired_vx, agent.desired_vy, self.params.dt)
         
+        # Build spatial grid for collision detection
+        self.spatial_grid.clear()
+        for agent in self.agents:
+            if agent.alive:
+                self.spatial_grid.insert(agent.agent_id, agent.x, agent.y)
+        
         # Resolve collisions
         self._resolve_collisions()
         
@@ -333,6 +520,9 @@ class World:
                 continue
             agent.update_position(self.params.dt)
             agent.clamp_to_arena(self.params.arena_width, self.params.arena_height)
+        
+        # Step projectiles
+        self._step_projectiles()
         
         self.step_count += 1
         return self.events
@@ -345,6 +535,10 @@ class World:
         
         self.agents = []
         self.agent_dict = {}
+        self.projectiles = []
+        self.projectile_dict = {}
+        self.in_flight_projectiles = []
+        self.next_projectile_id = 0
         self.step_count = 0
         self.events = []
         self.max_agent_id = -1

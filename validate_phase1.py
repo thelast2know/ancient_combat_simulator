@@ -5,9 +5,9 @@ Runs all tests and generates evaluation videos.
 
 import sys
 from pathlib import Path
+
 import numpy as np
 import yaml
-import io
 
 # Force UTF-8 output on Windows
 if sys.platform == 'win32':

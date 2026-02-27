@@ -1,0 +1,65 @@
+blue_agents:
+  - position: [20, 35]
+    team: 0
+    attributes:
+      cruise_speed: 5.0
+      max_speed: 8.0
+      acceleration: 10.0
+      agility: 3.0
+  
+  - position: [20, 50]
+    team: 0
+    attributes:
+      cruise_speed: 5.0
+      max_speed: 8.0
+      acceleration: 10.0
+      agility: 3.0
+  
+  - position: [20, 65]
+    team: 0
+    attributes:
+      cruise_speed: 5.0
+      max_speed: 8.0
+      acceleration: 10.0
+      agility: 3.0
+
+red_agents:
+  - position: [80, 35]
+    team: 1
+    attributes:
+      cruise_speed: 5.0
+      max_speed: 8.0
+      acceleration: 10.0
+      agility: 3.0
+  
+  - position: [80, 50]
+    team: 1
+    attributes:
+      cruise_speed: 5.0
+      max_speed: 8.0
+      acceleration: 10.0
+      agility: 3.0
+  
+  - position: [80, 65]
+    team: 1
+    attributes:
+      cruise_speed: 5.0
+      max_speed: 8.0
+      acceleration: 10.0
+      agility: 3.0
+
+blue_blocks:
+  - x_min: 5
+    y_min: 30
+    x_max: 18
+    y_max: 70
+    team: 0
+
+red_blocks:
+  - x_min: 82
+    y_min: 30
+    x_max: 95
+    y_max: 70
+    team: 1
+
+duration_steps: 300
